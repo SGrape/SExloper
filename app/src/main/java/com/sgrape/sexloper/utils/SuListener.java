@@ -34,9 +34,10 @@ public class SuListener extends Thread {
                 if (beQuit) break;
                 synchronized (handler) {
                     handler.obtainMessage(ERROR).sendToTarget();
-                    Log.d("type = " + type, line);
+                    System.out.println(line);
                 }
             }
+            br.close();
             interrupt();
         } catch (IOException e) {
             e.printStackTrace();

@@ -1,56 +1,62 @@
 package com.sgrape.sexloper.utils;
 
 import android.os.Handler;
+import android.os.Message;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.LinkedList;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by root on 16-4-22.
  */
-public class Su extends Thread {
+public class Su {
+    private ReentrantLock lock;
     private Process p;
     private BufferedWriter bw;
-    private boolean bequit;
     private SuListener err;
     private SuListener exe;
-    private Handler handler;
+    private Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            System.out.println(msg.obj);
+        }
+    };
     private LinkedList<String> commonds = new LinkedList<>();
 
     private Su() {
     }
 
-    public static Su newInstance(Handler handler) {
-        Su su = new Su();
-        su.handler = handler;
-        su.start();
+    public static Su newInstance() {
+        final Su su = new Su();
+        su.lock = new ReentrantLock();
+        su.lock.lock();
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    su.p = Runtime.getRuntime().exec("su");
+                    su.bw = new BufferedWriter(new OutputStreamWriter(su.p.getOutputStream()));
+                    su.err = new SuListener(su.handler, su.p.getInputStream(), SuListener.ERROR);
+                    su.exe = new SuListener(su.handler, su.p.getInputStream(), SuListener.OUTPUT);
+                    su.lock.unlock();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
         return su;
     }
 
-    @Override
-    public void run() {
-        try {
-            p = Runtime.getRuntime().exec("su");
-            bw = new BufferedWriter(new OutputStreamWriter(p.getOutputStream()));
-            err = new SuListener(handler, p.getInputStream(), SuListener.ERROR);
-            exe = new SuListener(handler, p.getInputStream(), SuListener.OUTPUT);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
-    public void exec(String commond) {
+    public synchronized void exec(String commond) {
         try {
-            synchronized (bw) {
-                bw.write(commond);
-                bw.newLine();
-                bw.flush();
-                commonds.addLast(commond);
-            }
+            bw.write(commond);
+            bw.newLine();
+            bw.flush();
+            commonds.addLast(commond);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -59,7 +65,12 @@ public class Su extends Thread {
     public void quit() {
         exec("exit");
         commonds.clear();
-        err.quit();
+        if (err != null) err.quit();
         exe.quit();
+        try {
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
