@@ -37,6 +37,7 @@ public class SuListener extends Thread {
                     System.out.println(line);
                 }
             }
+            System.out.println("stop");
             br.close();
             interrupt();
         } catch (IOException e) {
