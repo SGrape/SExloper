@@ -3,6 +3,7 @@ package com.sgrape.sexloper.utils;
 import android.os.Handler;
 import android.os.Message;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -27,45 +28,32 @@ public class Su {
     private LinkedList<String> commonds = new LinkedList<>();
 
     private Su() {
+        synchronized (lock) {
+            try {
+                System.out.println("started");
+                p = Runtime.getRuntime().exec("su");
+                bw = new BufferedWriter(new OutputStreamWriter(p.getOutputStream()));
+//                        err = new SuListener(handler, p.getInputStream(), SuListener.ERROR);
+                exe = new SuListener(handler, p.getInputStream(), SuListener.OUTPUT);
+//                        err.start();
+                exe.start();
+                System.out.println("started");
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+            }
+        }
     }
 
     public static Su newInstance() {
-        final Su su = new Su();
-        synchronized (su.lock) {
-            Thread work = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        System.out.println("started");
-                        su.p = Runtime.getRuntime().exec("su");
-                        su.bw = new BufferedWriter(new OutputStreamWriter(su.p.getOutputStream()));
-//                    su.err = new SuListener(su.handler, su.p.getInputStream(), SuListener.ERROR);
-                        su.exe = new SuListener(su.handler, su.p.getInputStream(), SuListener.OUTPUT);
-//                    su.err.start();
-                        su.exe.start();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
-                    }
-                }
-            };
-            work.start();
-            try {
-                work.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        return su;
+        return new Su();
     }
 
 
     public void exec(String commond) {
         synchronized (lock) {
             try {
-                System.out.println(commond);
-                bw.write(commond + " \n");
-                bw.newLine();
+                bw.write((commond + " \n"));
                 bw.flush();
                 commonds.addLast(commond);
             } catch (IOException e) {

@@ -30,12 +30,9 @@ public class SuListener extends Thread {
     public void run() {
         String line;
         try {
-            while ((line = br.readLine()) != null || !beQuit) {
+            while ((line = br.readLine()) != null && !beQuit) {
                 if (beQuit) break;
-                synchronized (handler) {
-                    handler.obtainMessage(ERROR).sendToTarget();
-                    System.out.println(line);
-                }
+                handler.obtainMessage(type, line).sendToTarget();
             }
             System.out.println("stop");
             br.close();
@@ -44,6 +41,7 @@ public class SuListener extends Thread {
             e.printStackTrace();
         }
     }
+
 
     public void quit() {
         beQuit = true;
