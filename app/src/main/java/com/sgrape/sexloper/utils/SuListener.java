@@ -2,7 +2,6 @@ package com.sgrape.sexloper.utils;
 
 
 import android.os.Handler;
-import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,7 +21,7 @@ public class SuListener extends Thread {
 
     public SuListener(Handler handler, InputStream is, int type) {
         this.handler = handler;
-        br = new BufferedReader(new InputStreamReader(is));
+        br = new BufferedReader(new InputStreamReader(is), 4096);
         this.type = type;
     }
 
@@ -30,12 +29,10 @@ public class SuListener extends Thread {
     public void run() {
         String line;
         try {
-        System.out.println(((line = br.readLine()) != null) && !beQuit);
             while (((line = br.readLine()) != null) && !beQuit) {
                 if (beQuit) break;
                 handler.obtainMessage(type, line).sendToTarget();
             }
-            System.out.println("stop");
             br.close();
             interrupt();
         } catch (IOException e) {
