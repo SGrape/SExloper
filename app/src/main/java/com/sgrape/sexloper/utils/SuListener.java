@@ -30,7 +30,8 @@ public class SuListener extends Thread {
     public void run() {
         String line;
         try {
-            while ((line = br.readLine()) != null && !beQuit) {
+        System.out.println(((line = br.readLine()) != null) && !beQuit);
+            while (((line = br.readLine()) != null) && !beQuit) {
                 if (beQuit) break;
                 handler.obtainMessage(type, line).sendToTarget();
             }
